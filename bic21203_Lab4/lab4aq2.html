@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab4aq2</title>
+</head>
+<body>
+    <h1>Number!</h1>
+    <input type="text" id="userInput" placeholder="Enter a number">
+    <button onclick="checkInput()">Check</button>
+
+    <script>
+        function checkInput(){
+            const userInput = document.getElementById("userInput").value;
+            if(userInput == "" || isNaN(userInput)){
+                alert("Please insert a number!");
+
+            }else{
+                if(userInput>10){
+                    alert("The number is higher than 10");
+
+                }else{
+                    alert("The number is lower than 10");
+                }
+            }
+                
+        }
+    </script>
+</body>
+</html>
