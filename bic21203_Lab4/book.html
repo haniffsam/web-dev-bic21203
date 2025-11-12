@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book</title>
+</head>
+<body>
+    <!-- Add this div for webpage output -->
+    <div id="output"></div>
+
+    <script>
+        const bookData = {
+            "Book": [
+                {
+                    "title": "The Great Gatsby",
+                    "author": "F. Scott Fitzgerald",
+                    "publicationYear": 1925,
+                    "genres": ["Fiction", "Classics"]
+                },
+                {    
+                    "title": "To Kill a Mockingbird",
+                    "author": "Harper Lee", 
+                    "publicationYear": 1960,
+                    "genres": ["Fiction", "Coming-of-Age"]
+                }
+            ]
+        };
+
+        // Console output (check Developer Tools - F12)
+        console.log(bookData.Book[0].title);
+        console.log(bookData.Book[1].author);
+        bookData.Book.forEach(book => {
+            console.log(book.genres);
+        });
+
+        // Webpage output
+        const output = document.getElementById('output');
+        output.innerHTML = `
+            <p>First Book Title: ${bookData.Book[0].title}</p>
+            <p>Second Book Author: ${bookData.Book[1].author}</p>
+            <p>All Book Genres:</p>
+            <ul>
+                ${bookData.Book.map(book => 
+                    `<li>${book.title}: ${book.genres.join(', ')}</li>`
+                ).join('')}
+            </ul>
+        `;
+    </script>
+</body>
+</html>
