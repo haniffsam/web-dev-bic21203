@@ -1,56 +1,67 @@
+<?php
+include 'db_connection.php'; // Ensure this file starts the session
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $username = mysqli_real_escape_string($conn, $_POST['username']);
+    $password = $_POST['password'];
+
+    // FIXED: Added username, full_name, and badge_id to the SELECT query
+    $sql = "SELECT id, username, password, role, full_name, badge_id FROM users WHERE username = '$username'";
+    $result = $conn->query($sql);
+
+    if ($result->num_rows > 0) {
+        $user = $result->fetch_assoc();
+        
+        if (password_verify($password, $user['password'])) {
+            if ($user['role'] == 'Engineer') {
+                // SUCCESS: Now all these variables actually exist in the $user array
+                $_SESSION['user_id']   = $user['id'];
+                $_SESSION['username']  = $user['username']; 
+                $_SESSION['full_name'] = $user['full_name'];
+                $_SESSION['badge_id']  = $user['badge_id'];
+                $_SESSION['role']      = $user['role'];
+                
+                header("Location: dashboard.php");
+                exit();
+            } else {
+                echo "<script>alert('Operators must use the Admin Portal link below.'); window.location='login.php';</script>";
+            }
+        } else {
+            echo "<script>alert('Invalid Password');</script>";
+        }
+    } else {
+        echo "<script>alert('User not found');</script>";
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Login - APG Safety System</title>
-    <style>
-        body { font-family: 'Times New Roman', serif; background-color: #f4f4f4; margin: 0; padding: 0; }
-        /* Header matching Figure 5 wireframe */
-        .header { background-color: #999; padding: 10px; text-align: center; position: relative; }
-        .user-info { font-size: 14px; font-weight: bold; }
-        
-        /* Main Login Container */
-        .login-container { width: 400px; margin: 100px auto; background: white; padding: 40px; border: 1px solid #ccc; text-align: center; }
-        h2 { border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 30px; }
-        
-        .input-group { margin-bottom: 20px; text-align: left; }
-        label { display: block; font-weight: bold; margin-bottom: 5px; }
-        input[type="text"], input[type="password"] { 
-            width: 100%; padding: 12px; border: none; border-radius: 20px; background-color: #aaa; color: white;
-        }
-        
-        .forgot-pass { color: blue; font-size: 12px; text-decoration: none; display: block; margin: 10px 0; }
-        
-        .btn-signin { 
-            background-color: #888; color: black; padding: 10px 40px; border: none; border-radius: 15px; cursor: pointer; font-weight: bold;
-        }
-        
-        .btn-register { 
-            position: fixed; bottom: 20px; right: 20px; background-color: #888; padding: 10px 20px; border-radius: 15px; text-decoration: none; color: black; font-size: 12px;
-        }
-    </style>
+    <link rel="stylesheet" href="css/style_login.css">
 </head>
 <body>
-
 <div class="login-container">
-    <h2>LOGIN</h2>
-    
-    <form action="process_login.php" method="POST">
-        <div class="input-group">
-            <label>Username:</label> 
-            <input type="text" name="username" required>
+    <div class="auth-card"> <h2>Login</h2>
+        <form method="POST">
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" name="username" required>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" name="password" required>
+            </div>
+            <div class="button-group">
+                <button type="submit" class="btn-primary">Sign In</button>
+                <a href="admin_login.php" class="btn-admin">Admin Portal</a>
+            </div>
+        </form>
+        <div class="auth-footer">
+            Don't have an account? <a href="register.php">Register here</a>
         </div>
-        
-        <div class="input-group">
-            <label>Password</label>
-            <input type="password" name="password" required>
-        </div>
-        
-        <button type="submit" class="btn-signin">Sign In</button>
-    </form>
+    </div>
 </div>
-
-<a href="register.php" class="btn-register">REGISTER</a> 
-
 </body>
 </html>
