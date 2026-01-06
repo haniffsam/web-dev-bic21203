@@ -21,17 +21,51 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_report'])) {
     $report_no = "RPT-" . date("Y") . "-" . rand(1000, 9999); 
     $title     = mysqli_real_escape_string($conn, $_POST['report_title']);
     $desc      = mysqli_real_escape_string($conn, $_POST['description']);
-    $file      = mysqli_real_escape_string($conn, $_POST['file_name']); 
-
-    // INSERTING AUTOMATED ROLE & MANUAL TITLE
-    $sql = "INSERT INTO reports (report_no, role, report_title, description, file_path, approval_status, report_status) 
-            VALUES ('$report_no', '$user_role', '$title', '$desc', '$file', 'Pending', 'Pending Review')";
-
-    if (mysqli_query($conn, $sql)) {
-        $success = "Report $report_no submitted successfully!";
-    } else {
-        $error = "Error: " . mysqli_error($conn);
+    
+    // --- FILE UPLOAD LOGIC START ---
+    $target_dir = "uploads/"; // Ensure this folder exists and is writable
+    if (!is_dir($target_dir)) {
+        mkdir($target_dir, 0777, true);
     }
+
+    $original_file_name = basename($_FILES["report_file"]["name"]);
+    $file_extension = strtolower(pathinfo($original_file_name, PATHINFO_EXTENSION));
+    
+    // Create a unique filename to prevent overwriting
+    $new_file_name = $report_no . "_" . time() . "." . $file_extension;
+    $target_file = $target_dir . $new_file_name;
+    
+    $upload_ok = true;
+
+    // Check file size (Example: 100MB limit)
+    if ($_FILES["report_file"]["size"] > 104857600) {
+        $error = "Sorry, your file is too large (Max 100MB).";
+        $upload_ok = false;
+    }
+
+    // Allow certain file formats
+    $allowed_types = ['pdf', 'docx', 'xlsx'];
+    if (!in_array($file_extension, $allowed_types)) {
+        $error = "Sorry, only PDF, DOCX, & XLSX files are allowed.";
+        $upload_ok = false;
+    }
+
+    if ($upload_ok) {
+        if (move_uploaded_file($_FILES["report_file"]["tmp_name"], $target_file)) {
+            // Use the file path for the database
+            $sql = "INSERT INTO reports (report_no, role, report_title, description, file_path, approval_status, report_status) 
+                    VALUES ('$report_no', '$user_role', '$title', '$desc', '$target_file', 'Pending', 'Pending Review')";
+
+            if (mysqli_query($conn, $sql)) {
+                $success = "Report $report_no submitted successfully with the attached file!";
+            } else {
+                $error = "Database Error: " . mysqli_error($conn);
+            }
+        } else {
+            $error = "Sorry, there was an error uploading your physical file.";
+        }
+    }
+    // --- FILE UPLOAD LOGIC END ---
 }
 ?>
 
@@ -43,6 +77,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_report'])) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style_dashboard.css">
     <link rel="stylesheet" href="css/style_create_report.css">
+    <style>
+        /* Small fix to ensure the file input looks okay */
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    </style>
 </head>
 <body>
     <aside class="sidebar">
@@ -79,8 +123,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_report'])) {
 
         <div class="upload-container">
             <?php if($success) echo "<div class='alert alert-success'>$success</div>"; ?>
+            <?php if($error) echo "<div class='alert alert-error' style='color: #721c24; background-color: #f8d7da; padding: 10px; border-radius: 5px; margin-bottom: 20px;'>$error</div>"; ?>
             
-            <form method="POST">
+            <form method="POST" enctype="multipart/form-data">
                 <div class="form-group">
                     <label>Full Name (Automated)</label>
                     <input type="text" value="<?php echo htmlspecialchars($full_name); ?>" readonly style="background: #eef2f7; cursor: not-allowed;">
@@ -107,13 +152,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_report'])) {
                 </div>
 
                 <div class="form-group">
-                    <label>Attachment Filename</label>
-                    <input type="text" name="file_name" placeholder="e.g., inspection_report_01.pdf" required>
+                    <label>Select Report File (.pdf, .docx, .xlsx)</label>
+                    <input type="file" name="report_file" required>
                 </div>
 
                 <div class="file-upload-area">
                     <i class="fas fa-cloud-upload-alt fa-3x" style="color: #3498db; margin-bottom: 10px;"></i>
-                    <h3>Drag & Drop your file here or Click to Upload!</h3>
+                    <h3>File Upload Ready</h3>
                     <p>Accepted: .pdf, .docx, .xlsx | Max: 100MB</p>
                 </div>
 

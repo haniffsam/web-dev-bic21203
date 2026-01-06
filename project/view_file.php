@@ -1,5 +1,5 @@
 <?php
-// view_file.php - Formal Report View
+// view_file.php - Formal Report View and File Downloader
 require_once 'db_connection.php';
 
 if (isset($_GET['id'])) {
@@ -8,6 +8,31 @@ if (isset($_GET['id'])) {
     $result = mysqli_query($conn, $query);
     
     if ($row = mysqli_fetch_assoc($result)) {
+        $file_path = $row['file_path'];
+
+        // --- 1. HANDLE DOWNLOAD ACTION ---
+        // If the user clicks a download link or we specifically want to trigger the file
+        if (isset($_GET['action']) && $_GET['action'] == 'download') {
+            if (file_exists($file_path)) {
+                $ext = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
+                if ($ext == 'pdf') {
+                    header("Content-type: application/pdf");
+                    header("Content-Disposition: inline; filename=" . basename($file_path));
+                } else {
+                    header("Content-Description: File Transfer");
+                    header("Content-Type: application/octet-stream");
+                    header("Content-Disposition: attachment; filename=" . basename($file_path));
+                }
+                readfile($file_path);
+                exit; // Only exit here if downloading
+            } else {
+                echo "<script>alert('Physical file not found on server.'); window.history.back();</script>";
+                exit;
+            }
+        }
+
+        // --- 2. DISPLAY FORMAL REPORT PAGE ---
+        // The script continues here if no download action was triggered
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -62,8 +87,13 @@ if (isset($_GET['id'])) {
         <div class="report-section">
             <div class="section-title">Document Reference</div>
             <div class="info-item">
-                <label>Database Path Reference</label>
-                <span style="color: #3498db;"><i class="fas fa-file-pdf"></i> <?php echo htmlspecialchars($row['file_path']); ?></span>
+                <label>Physical Attachment</label>
+                <div style="margin-top:10px;">
+                    <a href="view_file.php?id=<?php echo $id; ?>&action=download" class="btn-back" style="background:#27ae60;">
+                        <i class="fas fa-download"></i> Download/View Attachment
+                    </a>
+                </div>
+                <p style="font-size: 12px; color: #7f8c8d; margin-top: 5px;">File: <?php echo htmlspecialchars(basename($file_path)); ?></p>
             </div>
         </div>
 
@@ -82,7 +112,7 @@ if (isset($_GET['id'])) {
         
         <div style="margin-top: 30px; text-align: right;" class="back-nav">
             <button onclick="window.print()" class="btn-back" style="background: #3498db;">
-                <i class="fas fa-print"></i> Print Report
+                <i class="fas fa-print"></i> Print Report Page
             </button>
         </div>
     </div>
@@ -93,5 +123,7 @@ if (isset($_GET['id'])) {
     } else {
         echo "<div style='text-align:center; padding:50px;'><h2>Report not found.</h2><a href='admin.php'>Return to Dashboard</a></div>";
     }
+} else {
+    header("Location: admin.php");
 }
 ?>
